@@ -48,9 +48,8 @@ class OxfordLister(HTMLParser):
         self.sounds = []
 
     def handle_starttag(self, tag, attrs):
-        snd = [v for k, v in attrs if k == 'data-src-mp3']
-        if snd:
-            self.sounds.extend(snd)
+        if tag == 'audio' and len(attrs) == 1 and attrs[0][0] == 'src':
+            self.sounds.append(attrs[0][1])
 
 
 class Oxford(Service):
@@ -126,10 +125,10 @@ class Oxford(Service):
             raise IOError("Input text is too long for the Oxford Dictionary")
 
         from urllib2 import quote
-        dict_url = 'http://www.oxforddictionaries.com/definition/%s/%s' % (
-            'american_english' if options['voice'] == 'en-US' else 'english',
-            quote(text.encode('utf-8'))
-        )
+        dict_url = ('https://en.oxforddictionaries.com/definition/us/'
+                    if options['voice'] == 'en-US'
+                    else 'https://en.oxforddictionaries.com/definition/') + \
+                    quote(text.encode('utf-8'))
 
         try:
             html_payload = self.net_stream(dict_url)
@@ -155,7 +154,7 @@ class Oxford(Service):
             self.net_download(
                 path,
                 sound_url,
-                require=dict(mime='audio/mpeg', size=1024),
+                require=dict(size=1024),
             )
         else:
             raise IOError("The Oxford Dictionary recognized your input, "
